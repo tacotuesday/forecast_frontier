@@ -64,7 +64,7 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     }
     ctx.fillStyle = "rgba(12,38,54,.48)"; ctx.font = "600 10px Arial"; ctx.fillText("TRAINING DATA", pad.left, height - 9);
     ctx.fillStyle = "#d94f35"; ctx.fillText(result ? "HOLDOUT REVEALED →" : "HIDDEN HOLDOUT →", boundary + 9, height - 9);
-  }, [data, min, max, mission, result]);
+  }, [data, min, max, result]);
 
   useEffect(() => { draw(); const observer = new ResizeObserver(draw); if (canvasRef.current) observer.observe(canvasRef.current); return () => observer.disconnect(); }, [draw]);
   return <canvas ref={canvasRef} className="forecast-canvas" aria-label="Historical time series, hidden holdout, and model forecast" />;
@@ -197,8 +197,8 @@ export default function Home() {
         <ForecastChart mission={active} result={result} />
         <div className="chart-legend"><span><i className="legend-actual" /> observed</span><span><i className="legend-hidden" /> holdout actual</span><span><i className="legend-prediction" /> model forecast</span></div>
         <div className="controls-row">
-          <ControlSlider id="primary-control" control={active.primary} value={primary} onChange={(value) => { setPrimary(value); setResult(null); }} />
-          <ControlSlider id="secondary-control" control={active.secondary} value={secondary} onChange={(value) => { setSecondary(value); setResult(null); }} />
+          <ControlSlider id="primary-control" control={active.primary} value={primary} onChange={handlePrimaryChange} />
+          <ControlSlider id="secondary-control" control={active.secondary} value={secondary} onChange={handleSecondaryChange} />
           <button className="run-button" onClick={runForecast}><span>▶</span> RUN HOLDOUT</button>
         </div>
         <ResultBar result={result} feedback={feedback} />

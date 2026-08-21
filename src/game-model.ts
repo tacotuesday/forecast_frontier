@@ -343,6 +343,7 @@ export function seasonalNaive(mission: Mission) {
 }
 
 const FORECAST_CACHE = new Map<string, { forecast: number[]; actual: number[] }>();
+const BASELINE_CACHE = new Map<string, number[]>();
 
 function rmse(actual: number[], forecast: number[]) {
   return Math.sqrt(actual.reduce((sum, value, i) => sum + (value - forecast[i]) ** 2, 0) / actual.length);
@@ -369,9 +370,17 @@ export function evaluate(mission: Mission, primary: number, secondary: number) {
     FORECAST_CACHE.set(targetCacheKey, targetCached);
   }
 
+  // Cache the baseline so seasonalNaive() doesn't re-generate the series.
+  const baselineKey = `${mission.id}:__baseline__`;
+  let baselineCached = BASELINE_CACHE.get(baselineKey);
+  if (!baselineCached) {
+    baselineCached = seasonalNaive(mission);
+    BASELINE_CACHE.set(baselineKey, baselineCached);
+  }
+
   const modelRmse = rmse(cached.actual, cached.forecast);
   const bestRmse = rmse(targetCached.actual, targetCached.forecast);
-  const baselineRmse = rmse(cached.actual, seasonalNaive(mission));
+  const baselineRmse = rmse(cached.actual, baselineCached);
   const score = Math.max(0, Math.min(100, Math.round((bestRmse / modelRmse) * 100)));
   const skill = Math.round((1 - modelRmse / baselineRmse) * 100);
   return { forecast: cached.forecast, rmse: modelRmse, baselineRmse, skill, score, passed: score >= PASS_SCORE };
