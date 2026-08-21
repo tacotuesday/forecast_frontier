@@ -209,10 +209,7 @@ export default function Home() {
           <ControlSlider id="secondary-control" control={active.secondary} value={secondary} onChange={(value) => { setSecondary(value); setResult(null); }} />
           <button className="run-button" onClick={runForecast}><span>▶</span> RUN HOLDOUT</button>
         </div>
-        <div className={`result-bar ${result?.passed ? "result-success" : ""}`}>
-          <div className="result-copy"><span>{result ? result.passed ? "MISSION MASTERED" : "MODEL DIAGNOSTIC" : `MASTERY GATE · SCORE ${PASS_SCORE}+`}</span><p>{feedback}</p>{result && <small className="gate-note">Score is calibrated against the best achievable settings in this mission.</small>}</div>
-          <div className="metrics"><div><span>RMSE</span><strong>{result ? result.rmse.toFixed(2) : "—"}</strong></div><div><span>VS S.NAÏVE</span><strong className={result && result.skill > 0 ? "metric-positive" : ""}>{result ? `${result.skill > 0 ? "+" : ""}${result.skill}%` : "—"}</strong></div><div className="score"><span>MODEL SCORE</span><strong>{result ? result.score : "—"}<small>{result ? "/100" : ""}</small></strong></div></div>
-        </div>
+        <ResultBar result={result} feedback={feedback} />
         {result?.passed && <section className="mastery-debrief">
           <div className="debrief-head"><span>{result.score === 100 ? "WHY YOUR MODEL WON" : "WHY THIS MODEL PASSED"}</span><strong>Transfer the lesson</strong></div>
           <div className="chosen-settings"><span>{active.primary.label}: <b>{formatControl(active.primary, primary)}</b></span><span>{active.secondary.label}: <b>{formatControl(active.secondary, secondary)}</b></span></div>
