@@ -21,16 +21,6 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     return { data, min: Math.min(...data) - 8, max: Math.max(...data) + 8 };
   }, [mission]);
 
-  const { x, y } = useMemo(() => {
-    const pad = { left: 40, right: 22, top: 22, bottom: 30 };
-    const innerW = (canvasRef.current?.getBoundingClientRect().width || 0) - pad.left - pad.right;
-    const innerH = (canvasRef.current?.getBoundingClientRect().height || 0) - pad.top - pad.bottom;
-    return {
-      x: (i: number) => pad.left + (i / (data.length - 1)) * innerW,
-      y: (v: number) => pad.top + ((max - v) / (max - min)) * innerH,
-    };
-  }, [data, min, max]);
-
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -47,6 +37,8 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
 
+    const x = (i: number) => pad.left + (i / (data.length - 1)) * innerW;
+    const y = (v: number) => pad.top + ((max - v) / (max - min)) * innerH;
     ctx.clearRect(0, 0, width, height);
     ctx.strokeStyle = "rgba(12,38,54,.1)";
     ctx.lineWidth = 1;
@@ -72,7 +64,7 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     }
     ctx.fillStyle = "rgba(12,38,54,.48)"; ctx.font = "600 10px Arial"; ctx.fillText("TRAINING DATA", pad.left, height - 9);
     ctx.fillStyle = "#d94f35"; ctx.fillText(result ? "HOLDOUT REVEALED →" : "HIDDEN HOLDOUT →", boundary + 9, height - 9);
-  }, [data, min, max, mission, result, x, y]);
+  }, [data, min, max, mission, result]);
 
   useEffect(() => { draw(); const observer = new ResizeObserver(draw); if (canvasRef.current) observer.observe(canvasRef.current); return () => observer.disconnect(); }, [draw]);
   return <canvas ref={canvasRef} className="forecast-canvas" aria-label="Historical time series, hidden holdout, and model forecast" />;
@@ -209,10 +201,7 @@ export default function Home() {
           <ControlSlider id="secondary-control" control={active.secondary} value={secondary} onChange={(value) => { setSecondary(value); setResult(null); }} />
           <button className="run-button" onClick={runForecast}><span>▶</span> RUN HOLDOUT</button>
         </div>
-        <div className={`result-bar ${result?.passed ? "result-success" : ""}`}>
-          <div className="result-copy"><span>{result ? result.passed ? "MISSION MASTERED" : "MODEL DIAGNOSTIC" : `MASTERY GATE · SCORE ${PASS_SCORE}+`}</span><p>{feedback}</p>{result && <small className="gate-note">Score is calibrated against the best achievable settings in this mission.</small>}</div>
-          <div className="metrics"><div><span>RMSE</span><strong>{result ? result.rmse.toFixed(2) : "—"}</strong></div><div><span>VS S.NAÏVE</span><strong className={result && result.skill > 0 ? "metric-positive" : ""}>{result ? `${result.skill > 0 ? "+" : ""}${result.skill}%` : "—"}</strong></div><div className="score"><span>MODEL SCORE</span><strong>{result ? result.score : "—"}<small>{result ? "/100" : ""}</small></strong></div></div>
-        </div>
+        <ResultBar result={result} feedback={feedback} />
         {result?.passed && <section className="mastery-debrief">
           <div className="debrief-head"><span>{result.score === 100 ? "WHY YOUR MODEL WON" : "WHY THIS MODEL PASSED"}</span><strong>Transfer the lesson</strong></div>
           <div className="chosen-settings"><span>{active.primary.label}: <b>{formatControl(active.primary, primary)}</b></span><span>{active.secondary.label}: <b>{formatControl(active.secondary, secondary)}</b></span></div>

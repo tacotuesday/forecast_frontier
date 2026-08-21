@@ -351,17 +351,21 @@ function rmse(actual: number[], forecast: number[]) {
 export function evaluate(mission: Mission, primary: number, secondary: number) {
   const cacheKey = `${mission.id}:${primary}:${secondary}`;
   let cached = FORECAST_CACHE.get(cacheKey);
+
+  // Single makeSeries call — reused for both model and target entries
   if (!cached) {
     const series = makeSeries(mission);
-    cached = { forecast: makeForecast(mission, primary, secondary), actual: series.slice(TRAIN_LENGTH) };
+    const actual = series.slice(TRAIN_LENGTH);
+    cached = { forecast: makeForecast(mission, primary, secondary), actual };
     FORECAST_CACHE.set(cacheKey, cached);
   }
 
+  // Target comparison also reuses the same series (once per cache miss)
   const targetCacheKey = `${mission.id}:target`;
   let targetCached = FORECAST_CACHE.get(targetCacheKey);
   if (!targetCached) {
-    const series = makeSeries(mission);
-    targetCached = { forecast: makeForecast(mission, mission.target[0], mission.target[1]), actual: series.slice(TRAIN_LENGTH) };
+    const actual = cached ? cached.actual : makeSeries(mission).slice(TRAIN_LENGTH);
+    targetCached = { forecast: makeForecast(mission, mission.target[0], mission.target[1]), actual };
     FORECAST_CACHE.set(targetCacheKey, targetCached);
   }
 
