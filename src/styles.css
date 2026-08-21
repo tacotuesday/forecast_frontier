@@ -124,6 +124,7 @@ button { color: inherit; }
 .forecast-canvas { width: 100%; height: 270px; display: block; }
 .chart-legend { display: flex; justify-content: center; gap: 25px; padding: 0 20px 18px; color: #7a878d; font: 600 9px var(--font-geist-mono), monospace; text-transform: uppercase; }
 .chart-legend span { display: flex; align-items: center; gap: 6px; }.chart-legend i { width: 18px; height: 3px; background: var(--ink); }.chart-legend .legend-hidden { opacity: .25; background: repeating-linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 7px); }.chart-legend .legend-prediction { background: var(--coral); }
+.chart-disclaimer { text-align: center; color: rgba(12,38,54,.45); font: 425 9px Arial; margin: -8px 0 6px; padding: 0 16px; line-height: 1.3; }
 .controls-row { background: #edf1ed; border-top: 1px solid rgba(11,38,55,.08); border-bottom: 1px solid rgba(11,38,55,.08); padding: 22px 28px; display: flex; gap: 28px; align-items: flex-end; }
 .control-block { flex: 1; min-width: 150px; }
 .control-block label { display: flex; justify-content: space-between; align-items: baseline; color: #627078; font: 700 9px var(--font-geist-mono), monospace; letter-spacing: .12em; }

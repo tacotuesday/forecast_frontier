@@ -34,6 +34,8 @@ export type Mission = {
   period: number;
 };
 
+export type SeriesPeriodType = 'monthly' | 'quarterly' | 'yearly' | 'weekly_daily' | 'sub-daily';
+
 const binary = (label: string, off: string, on: string): Control => ({ label, min: 0, max: 1, step: 1, labels: { 0: off, 1: on } });
 
 export const missions: Mission[] = [
@@ -42,7 +44,7 @@ export const missions: Mission[] = [
     primary: { label: "SEASONAL PERIOD", min: 4, max: 14, step: 1, unit: " months" }, secondary: { label: "MAX ACF LAG", min: 8, max: 24, step: 4, unit: " lags" }, defaults: [6, 8], target: [12, 24], period: 12,
   },
   {
-    id: "decomposition", step: 2, chapter: 3, act: 1, eyebrow: "DECOMPOSITION DELTA", title: "Separate the Signal", shortTitle: "Decompose", concept: "Transformations, trend & seasonal components", objective: "Extract trend and seasonality without letting an outlier bend them.", learn: "How STL separates a series into trend-cycle, seasonal, and remainder components.", fieldNote: "An odd seasonal window near the middle is flexible enough for change; robust fitting protects against the visible spike.", success: "Components separated! The remainder is small and the trend is no longer distorted by the outlier.", dataTitle: "Quarterly retail turnover", color: "#f6b85b",
+    id: "decomposition", step: 2, chapter: 3, act: 1, eyebrow: "DECOMPOSITION DELTA", title: "Separate the Signal", shortTitle: "Decompose", concept: "Transformations, trend & seasonal components", objective: "Extract trend and seasonality without letting an outlier bend them.", learn: "How STL separates a series into trend-cycle, seasonal, and remainder components. Data is quarterly.", fieldNote: "An odd seasonal window near the middle is flexible enough for change; robust fitting protects against the visible spike.", success: "Components separated! The remainder is small and the trend is no longer distorted by the outlier.", dataTitle: "Quarterly retail turnover", color: "#f6b85b",
     primary: { label: "STL WINDOW", min: 3, max: 13, step: 2, unit: " points" }, secondary: binary("ROBUST FIT", "off", "on"), defaults: [3, 0], target: [7, 1], period: 4,
   },
   {
@@ -305,6 +307,70 @@ export const PASS_SCORE = 80;
 
 export function formatControl(control: Control, value: number) {
   return control.labels?.[value] ?? `${Number.isInteger(value) ? value : value.toFixed(1)}${control.unit ?? ""}`;
+}
+
+const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
+
+export function getTimeSeriesInfo(mission: Mission): { periodType: SeriesPeriodType; startDate: Date } {
+  const { period, id } = mission;
+  if (period === 12) return { periodType: 'monthly', startDate: new Date(2023, 0, 1) };
+  if (period === 4) return { periodType: 'quarterly', startDate: new Date(2023, 0, 1) };
+  if (period === 8 && id === 'ets') return { periodType: 'yearly', startDate: new Date(2019, 0, 1) };
+  if (period === 8) return { periodType: 'sub-daily', startDate: new Date(2023, 0, 1) };
+  if (period === 7) return { periodType: 'weekly_daily', startDate: new Date(2023, 0, 1) };
+  // default fallback — treat as sub-daily
+  return { periodType: 'sub-daily', startDate: new Date(2023, 0, 1) };
+}
+
+export function getXAxisTicks(mission: Mission): { positions: number[]; labels: string[] } {
+  const { positions, labels } = (() => {
+    switch (mission.period) {
+      case 12:
+        return { positions: [0, 12, 24, 36], labels: ['2023', '2024', '2025', '2026'] };
+      case 4:
+        return { positions: [0, 12, 24, 36], labels: ['2023', '2024', '2025', '2026'] };
+      case 8:
+        if (mission.id === 'ets') {
+          return { positions: Array.from({ length: 8 }, (_, i) => i), labels: ['2019','2020','2021','2022','2023','2024','2025','2026'] };
+        }
+        // sub-daily (half-hourly): 48 obs = 24 hours, so label every 12 obs (6 hours)
+        return { positions: [0, 12, 24, 36], labels: ['0h', '6h', '12h', '18h'] };
+      case 7:
+        // weekly daily data — repeat day initials cycling from Jan 1, 2023 (Sunday)
+        const ticks: string[] = [];
+        for (let i = 0; i < 48; i++) {
+          ticks.push(dayNames[i % 7]);
+        }
+        return { positions: Array.from({ length: 48 }, (_, i) => i), labels: ticks };
+      default:
+        // sub-daily fallback
+        return { positions: [0, 12, 24, 36], labels: ['0h', '6h', '12h', '18h'] };
+    }
+  })();
+  return { positions, labels };
+}
+
+export function getYAxisLabel(mission: Mission): { label: string; disclaimer: string } {
+  const labelMap: Record<MissionId, string> = {
+    graphics: "Visitors (000s)",
+    decomposition: "Turnover ($M)",
+    features: "Tourism Index",
+    toolbox: "Production (hl)",
+    regression: "Load (MW)",
+    ets: "Users (millions)",
+    arima: "Index (base 100)",
+    dynamic: "Demand units",
+    hierarchy: "Sales ($M)",
+    advanced: "Load (MW)",
+    practical: "Sales count",
+    neural: "Passengers (000s)",
+    foundation: "Price ($/MWh)",
+  };
+  const unit = labelMap[mission.id] ?? "Value";
+  return {
+    label: unit,
+    disclaimer: "This plot visualizes a simulated time series approximating the domain depicted. Results should not be extrapolated to infer real-world patterns or magnitudes.",
+  };
 }
 
 export function makeSeries(mission: Mission) {

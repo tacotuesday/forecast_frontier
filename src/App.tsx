@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { chapterBriefs, evaluate, formatControl, makeSeries, masteryGuides, missions, PASS_SCORE, TRAIN_LENGTH, type Control, type Mission, type MissionId } from "./game-model";
+import { getXAxisTicks, getYAxisLabel } from "./game-model";
 
 type Result = ReturnType<typeof evaluate>;
 
@@ -33,7 +34,7 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     ctx.scale(ratio, ratio);
     const width = rect.width;
     const height = rect.height;
-    const pad = { left: 40, right: 22, top: 22, bottom: 30 };
+    const pad = { left: 40, right: 22, top: 22, bottom: 46 };
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
 
@@ -62,8 +63,30 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
       line(data.slice(TRAIN_LENGTH - 1), TRAIN_LENGTH - 1, "rgba(11,38,55,.28)", true, 2);
       line([data[TRAIN_LENGTH - 1], ...result.forecast], TRAIN_LENGTH - 1, "#ff6b4a", false, 3.5);
     }
-    ctx.fillStyle = "rgba(12,38,54,.48)"; ctx.font = "600 10px Arial"; ctx.fillText("TRAINING DATA", pad.left, height - 9);
-    ctx.fillStyle = "#d94f35"; ctx.fillText(result ? "HOLDOUT REVEALED →" : "HIDDEN HOLDOUT →", boundary + 9, height - 9);
+    ctx.fillStyle = "rgba(12,38,54,.48)"; ctx.font = "600 10px Arial"; ctx.fillText("TRAINING DATA", pad.left, height - pad.bottom - 12);
+    ctx.fillStyle = "#d94f35"; ctx.fillText(result ? "HOLDOUT REVEALED →" : "HIDDEN HOLDOUT →", boundary + 6, height - pad.bottom - 12);
+
+    // X-axis ticks and labels
+    const xAxisTicks = getXAxisTicks(mission);
+    ctx.font = "700 10px 'Inter', 'SF Pro Display', Arial, sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillStyle = "rgba(12,38,54,.6)";
+    xAxisTicks.positions.forEach((pos, i) => {
+      const px = x(pos);
+      const ly = height - pad.bottom + 16;
+      ctx.fillText(xAxisTicks.labels[i], px, ly);
+    });
+
+    // Y-axis unit label (rotated)
+    const yAxisInfo = getYAxisLabel(mission);
+    ctx.save();
+    ctx.translate(pad.left / 2 - 4, pad.top + innerH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.font = "700 11px 'Inter', 'SF Pro Display', Arial, sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillStyle = "rgba(12,38,54,.94)";
+    ctx.fillText(yAxisInfo.label, 0, 0);
+    ctx.restore();
   }, [data, min, max, result]);
 
   useEffect(() => { draw(); const observer = new ResizeObserver(draw); if (canvasRef.current) observer.observe(canvasRef.current); return () => observer.disconnect(); }, [draw]);
@@ -196,6 +219,7 @@ export default function Home() {
         <div className="lab-head"><div><span>OUT-OF-SAMPLE DATA LAB</span><h3>{active.dataTitle}</h3></div><div className="status-chip"><i /> 40 TRAIN · 8 HOLDOUT</div></div>
         <ForecastChart mission={active} result={result} />
         <div className="chart-legend"><span><i className="legend-actual" /> observed</span><span><i className="legend-hidden" /> holdout actual</span><span><i className="legend-prediction" /> model forecast</span></div>
+        <p className="chart-disclaimer">{getYAxisLabel(active).disclaimer}</p>
         <div className="controls-row">
           <ControlSlider id="primary-control" control={active.primary} value={primary} onChange={handlePrimaryChange} />
           <ControlSlider id="secondary-control" control={active.secondary} value={secondary} onChange={handleSecondaryChange} />
