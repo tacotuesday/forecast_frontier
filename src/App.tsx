@@ -21,16 +21,6 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     return { data, min: Math.min(...data) - 8, max: Math.max(...data) + 8 };
   }, [mission]);
 
-  const { x, y } = useMemo(() => {
-    const pad = { left: 40, right: 22, top: 22, bottom: 30 };
-    const innerW = (canvasRef.current?.getBoundingClientRect().width || 0) - pad.left - pad.right;
-    const innerH = (canvasRef.current?.getBoundingClientRect().height || 0) - pad.top - pad.bottom;
-    return {
-      x: (i: number) => pad.left + (i / (data.length - 1)) * innerW,
-      y: (v: number) => pad.top + ((max - v) / (max - min)) * innerH,
-    };
-  }, [data, min, max]);
-
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -47,6 +37,8 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
 
+    const x = (i: number) => pad.left + (i / (data.length - 1)) * innerW;
+    const y = (v: number) => pad.top + ((max - v) / (max - min)) * innerH;
     ctx.clearRect(0, 0, width, height);
     ctx.strokeStyle = "rgba(12,38,54,.1)";
     ctx.lineWidth = 1;
@@ -72,7 +64,7 @@ function ForecastChart({ mission, result }: { mission: Mission; result: Result |
     }
     ctx.fillStyle = "rgba(12,38,54,.48)"; ctx.font = "600 10px Arial"; ctx.fillText("TRAINING DATA", pad.left, height - 9);
     ctx.fillStyle = "#d94f35"; ctx.fillText(result ? "HOLDOUT REVEALED →" : "HIDDEN HOLDOUT →", boundary + 9, height - 9);
-  }, [data, min, max, mission, result, x, y]);
+  }, [data, min, max, mission, result]);
 
   useEffect(() => { draw(); const observer = new ResizeObserver(draw); if (canvasRef.current) observer.observe(canvasRef.current); return () => observer.disconnect(); }, [draw]);
   return <canvas ref={canvasRef} className="forecast-canvas" aria-label="Historical time series, hidden holdout, and model forecast" />;
