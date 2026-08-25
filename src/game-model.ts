@@ -331,7 +331,7 @@ export function getXAxisTicks(mission: Mission): { positions: number[]; labels: 
         return { positions: [0, 12, 24, 36], labels: ['2023', '2024', '2025', '2026'] };
       case 8:
         if (mission.id === 'ets') {
-          return { positions: Array.from({ length: 8 }, (_, i) => i), labels: ['2019','2020','2021','2022','2023','2024','2025','2026'] };
+          return { positions: [0, 12, 24, 36], labels: ['2020', '2022', '2024', '2026'] };
         }
         // sub-daily (half-hourly): 48 obs = 24 hours, so label every 12 obs (6 hours)
         return { positions: [0, 12, 24, 36], labels: ['0h', '6h', '12h', '18h'] };
